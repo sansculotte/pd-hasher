@@ -8,6 +8,7 @@
 **/
 #include <string.h>
 #include <stdlib.h>
+#include <gcrypt.h>
 #include "m_pd.h"
 
 #define VERSION "v0.0.1"
@@ -16,7 +17,7 @@
 #define FALSE 0
 
 
-typedef enum {MD5, SHA1, SHA256} t_algorithm;
+typedef int t_algorithm;
 
 static t_class *hasher_class;
 
@@ -26,13 +27,20 @@ typedef struct _hasher {
     t_algorithm algorithm; 
 } t_hasher;
 
-void _hasher_about(t_hasher *x);
-void _hasher_algorithm(t_hasher *x, t_symbol *s);
-void _hasher_hash(t_hasher *x, t_symbol *s);
-
 t_algorithm select_algorithm(t_symbol *algorithm);
 char* algorithm_name(t_algorithm algorithm);
 
+
+/**
+ * convert digest raw bytes into hexpairs
+ */
+void to_hex(size_t length, unsigned char* digest, char* hexdigest)
+{
+    size_t i;
+    for(i=0; i < length; i++) {
+        sprintf(hexdigest + (2 * i), "%02x", *(digest + i));
+    }
+}
 
 /**
  * Select algorithm from user input
@@ -43,20 +51,12 @@ t_algorithm select_algorithm(t_symbol *algorithm) {
     char* a = algorithm->s_name;
 
     if (strcmp(a, "sha-256") == 0 || strcmp(a, "sha256") == 0) {
-        return SHA256;
+        return GCRY_MD_SHA256;
     }
     if (strcmp(a, "sha-1") == 0 || strcmp(a, "sha1") == 0) {
-        return SHA1;
+        return GCRY_MD_SHA1;
     }
-    return MD5;
-}
-
-/**
- * get human readable name for algorithm
- */
-char* algorithm_name(t_algorithm a) {
-    char* algorithms[] = {"md5", "sha1", "sha256"};
-    return algorithms[a];
+    return GCRY_MD_MD5;
 }
 
 /**
@@ -78,7 +78,7 @@ void* hasher_new(t_symbol* s)
 void _hasher_about(t_hasher *x)
 {
     char v[64];
-    sprintf(v, "[hasher] version: %s\nalgorithm: %s", VERSION, algorithm_name(x->algorithm));
+    sprintf(v, "[hasher] version: %s\nalgorithm: %s", VERSION, gcry_md_algo_name(x->algorithm));
     post(v);
     post("https://github.com/sansculotte/pd-hasher");
 }
@@ -91,10 +91,20 @@ void _hasher_algorithm(t_hasher *x, t_symbol *s) {
 }
 
 /**
- * hash a string 
+ * hash a string
  */
-void _hasher_hash(t_hasher *x, t_symbol *s) {
-    outlet_symbol(x->s_out, s);
+void _hasher_hexdigest(t_hasher *x, t_symbol *s)
+{
+    size_t digsize = gcry_md_get_algo_dlen(x->algorithm);
+    unsigned char* digest = malloc(digsize);
+    char * hexdigest = calloc(digsize * 2 + 1, sizeof(char));
+
+    gcry_md_hash_buffer(x->algorithm, digest, s->s_name, strlen(s->s_name));
+    to_hex(digsize, digest, hexdigest);
+    outlet_symbol(x->s_out, gensym(hexdigest));
+
+    free(digest);
+    free(hexdigest);
 }
 
 /**
@@ -113,5 +123,6 @@ void hasher_setup(void)
     );
     class_addmethod(hasher_class, (t_method)_hasher_about, gensym("about"), 0);
     class_addmethod(hasher_class, (t_method)_hasher_algorithm, gensym("algorithm"), A_SYMBOL, 0);
-    class_addmethod(hasher_class, (t_method)_hasher_hash, gensym("hash"), A_SYMBOL, 0);
+    class_addmethod(hasher_class, (t_method)_hasher_hexdigest, gensym("hex"), A_SYMBOL, 0);
+    class_addmethod(hasher_class, (t_method)_hasher_hexdigest, gensym("hexdigest"), A_SYMBOL, 0);
 }
