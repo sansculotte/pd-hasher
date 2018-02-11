@@ -93,13 +93,20 @@ void _hasher_algorithm(t_hasher *x, t_symbol *s) {
 /**
  * hash a string
  */
-void _hasher_hexdigest(t_hasher *x, t_symbol *s)
+void _hasher_hexdigest(t_hasher *x, t_symbol *s, int argc, t_atom* argv)
 {
+    int length;
     size_t digsize = gcry_md_get_algo_dlen(x->algorithm);
     unsigned char* digest = malloc(digsize);
     char * hexdigest = calloc(digsize * 2 + 1, sizeof(char));
+    char *buf;
+    t_binbuf *b = 0;
 
-    gcry_md_hash_buffer(x->algorithm, digest, s->s_name, strlen(s->s_name));
+    b = binbuf_new();
+    binbuf_add(b, argc, argv);
+    binbuf_gettext(b, &buf, &length);
+    
+    gcry_md_hash_buffer(x->algorithm, digest, buf, length);
     to_hex(digsize, digest, hexdigest);
     outlet_symbol(x->s_out, gensym(hexdigest));
 
@@ -123,6 +130,6 @@ void hasher_setup(void)
     );
     class_addmethod(hasher_class, (t_method)_hasher_about, gensym("about"), 0);
     class_addmethod(hasher_class, (t_method)_hasher_algorithm, gensym("algorithm"), A_SYMBOL, 0);
-    class_addmethod(hasher_class, (t_method)_hasher_hexdigest, gensym("hex"), A_SYMBOL, 0);
-    class_addmethod(hasher_class, (t_method)_hasher_hexdigest, gensym("hexdigest"), A_SYMBOL, 0);
+    class_addmethod(hasher_class, (t_method)_hasher_hexdigest, gensym("hex"), A_GIMME, 0);
+    class_addmethod(hasher_class, (t_method)_hasher_hexdigest, gensym("hexdigest"), A_GIMME, 0);
 }
