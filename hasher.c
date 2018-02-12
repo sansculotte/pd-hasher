@@ -56,6 +56,9 @@ t_algorithm select_algorithm(t_symbol *algorithm) {
     if (strcmp(a, "sha-1") == 0 || strcmp(a, "sha1") == 0) {
         return GCRY_MD_SHA1;
     }
+    if (strcmp(a, "tiger") == 0 || strcmp(a, "tiger") == 0) {
+        return GCRY_MD_TIGER;
+    }
     return GCRY_MD_MD5;
 }
 
