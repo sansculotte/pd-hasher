@@ -1,0 +1,16 @@
+# Makefile for mylib
+
+lib.name = hasher
+
+class.sources = hasher.c
+
+# build for 64 bit only
+arch := x86_64
+
+# link to libgphoto2
+ldlibs = -lgcrypt
+
+datafiles = hasher-help.pd
+
+PDLIBBUILDER_DIR=pd-lib-builder/
+include $(PDLIBBUILDER_DIR)/Makefile.pdlibbuilder
