@@ -49,12 +49,18 @@ void to_hex(size_t length, unsigned char* digest, char* hexdigest)
 t_algorithm select_algorithm(t_symbol *algorithm) {
 
     char* a = algorithm->s_name;
-
+	
+    if (strcmp(a, "sha-512") == 0 || strcmp(a, "sha512") == 0) {
+        return GCRY_MD_SHA512;
+    }
     if (strcmp(a, "sha-256") == 0 || strcmp(a, "sha256") == 0) {
         return GCRY_MD_SHA256;
     }
     if (strcmp(a, "sha-1") == 0 || strcmp(a, "sha1") == 0) {
         return GCRY_MD_SHA1;
+    }
+    if (strcmp(a, "tiger") == 0 || strcmp(a, "tiger") == 0) {
+        return GCRY_MD_TIGER;
     }
     return GCRY_MD_MD5;
 }
