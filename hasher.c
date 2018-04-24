@@ -17,24 +17,22 @@
 #define FALSE 0
 
 
-typedef int t_algorithm;
 
 static t_class *hasher_class;
 
+
+typedef int t_algorithm;
 typedef struct _hasher {
     t_object  x_obj;
     t_outlet  *s_out;
     t_algorithm algorithm; 
 } t_hasher;
 
-t_algorithm select_algorithm(t_symbol *algorithm);
-char* algorithm_name(t_algorithm algorithm);
-
 
 /**
  * convert digest raw bytes into hexpairs
  */
-void to_hex(size_t length, unsigned char* digest, char* hexdigest)
+static void to_hex(size_t length, unsigned char* digest, char* hexdigest)
 {
     size_t i;
     for(i=0; i < length; i++) {
@@ -46,7 +44,7 @@ void to_hex(size_t length, unsigned char* digest, char* hexdigest)
  * Select algorithm from user input
  * default to md5
  */
-t_algorithm select_algorithm(t_symbol *algorithm) {
+static t_algorithm select_algorithm(t_symbol *algorithm) {
 
     char* a = algorithm->s_name;
 	
@@ -68,7 +66,7 @@ t_algorithm select_algorithm(t_symbol *algorithm) {
 /**
  * constructor
  */
-void* hasher_new(t_symbol* s)
+static void* hasher_new(t_symbol* s)
 {
     t_hasher *x = (t_hasher *)pd_new(hasher_class);
 
@@ -81,7 +79,7 @@ void* hasher_new(t_symbol* s)
 /**
  * info and pointers
  */
-void _hasher_about(t_hasher *x)
+static void _hasher_about(t_hasher *x)
 {
     char v[64];
     sprintf(v, "[hasher] version: %s\nalgorithm: %s", VERSION, gcry_md_algo_name(x->algorithm));
@@ -92,14 +90,14 @@ void _hasher_about(t_hasher *x)
 /**
  * change the hashering algorithm
  */
-void _hasher_algorithm(t_hasher *x, t_symbol *s) {
+static void _hasher_algorithm(t_hasher *x, t_symbol *s) {
     x->algorithm = select_algorithm(s);
 }
 
 /**
  * hash a string
  */
-void _hasher_hexdigest(t_hasher *x, t_symbol *s, int argc, t_atom* argv)
+static void _hasher_hexdigest(t_hasher *x, t_symbol *s, int argc, t_atom* argv)
 {
     int length;
     size_t digsize = gcry_md_get_algo_dlen(x->algorithm);
